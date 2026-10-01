@@ -6,7 +6,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * The A* loop as a resumable object. {@link #step()} does one expansion, so a caller can spread
@@ -21,6 +23,10 @@ import java.util.Set;
  * their prices from the graph's arrays, and (unless it keeps a node per heading) numbers its
  * nodes by the graph's cells, so it needs no hashing either. With the same moves, listed in the
  * same order, at the same prices, it expands the same nodes and returns the same path.
+ *
+ * <p>Those per-cell node tables are as big as the graph (megabytes on a whole map), so a
+ * finished search hands its table back, cleared, for the next search on the same graph.
+ * Allocating and filling a fresh one took longer than many searches themselves.
  */
 public final class AStarSearch {
     private static final MoveType[] MOVES = MoveType.values();
@@ -33,7 +39,16 @@ public final class AStarSearch {
     private final SearchListener listener;
     private final boolean observed;
 
-    private final NodeTable nodes;
+    // A graph's spare node table, cleared, kept between searches. Its pos array is dropped
+    // while it waits, so the graph's positions (the key) are only weakly held.
+    private static final Map<long[], NodeTable> SPARE_TABLES = new WeakHashMap<>();
+
+    private NodeTable nodes; // null once a dense search has finished and handed its table back
+    private final long[] positions; // the graph's cell positions, for dense searches; else null
+    private int[] touched; // dense searches: every node given a g, to clear on hand-back
+    private int touchedCount;
+    private List<PathStep> finalPath; // dense searches: kept when the table goes back
+    private double finalCost = Double.POSITIVE_INFINITY;
     // The heap holds node ids with their sort keys (f, then h) alongside, so comparisons read
     // neighbouring memory instead of jumping into the node arrays.
     private int[] heap = new int[1024];
@@ -94,7 +109,7 @@ public final class AStarSearch {
             if (s < 0) {
                 throw new IllegalArgumentException("The start " + start + " isn't in the graph");
             }
-            this.nodes = dense ? new NodeTable(graph.positions()) : new NodeTable(1024);
+            this.nodes = dense ? borrow(graph.positions()) : new NodeTable(1024);
             if (!dense) {
                 s = nodes.getOrCreate(start.pack());
             }
@@ -103,6 +118,8 @@ public final class AStarSearch {
             s = nodes.getOrCreate(start.pack());
         }
         this.dense = dense;
+        this.positions = dense ? graph.positions() : null;
+        this.touched = dense ? new int[1024] : null;
         this.perHeading = turning != null && turning.exact();
         double[] table = graph != null && turning != null ? turning.turnCostByHeading() : null;
         byte[] headings = table != null ? graph.moveHeading() : null;
@@ -333,17 +350,17 @@ public final class AStarSearch {
     public SearchResult result() {
         Set<BlockPoint> closedPoints = new LinkedHashSet<>(capacity(closedCount));
         for (int i = 0; i < closedCount; i++) {
-            closedPoints.add(Pos.toPoint(nodes.pos[closedOrder[i]]));
+            closedPoints.add(Pos.toPoint(posOf(closedOrder[i])));
         }
         Set<BlockPoint> openPoints = new LinkedHashSet<>(capacity(heapSize));
         for (int i = 0; i < heapSize; i++) {
-            openPoints.add(Pos.toPoint(nodes.pos[heap[i]]));
+            openPoints.add(Pos.toPoint(posOf(heap[i])));
         }
         boolean ok = status == Status.FOUND;
         return new SearchResult(
                 status,
-                ok ? reconstructPath(found) : List.of(),
-                ok ? nodes.g[found] : Double.POSITIVE_INFINITY,
+                ok ? path(found) : List.of(),
+                ok ? cost(found) : Double.POSITIVE_INFINITY,
                 Collections.unmodifiableSet(closedPoints),
                 Collections.unmodifiableSet(openPoints),
                 closedCount);
@@ -356,9 +373,9 @@ public final class AStarSearch {
      */
     public List<PathStep> bestSoFar() {
         if (found != NodeTable.NONE) {
-            return reconstructPath(found);
+            return path(found);
         }
-        return best == NodeTable.NONE ? List.of() : reconstructPath(best);
+        return best == NodeTable.NONE ? List.of() : path(best);
     }
 
     private Status finish(Status s) {
@@ -366,7 +383,53 @@ public final class AStarSearch {
         if (observed) {
             listener.onFinish(result());
         }
+        if (dense) {
+            // Keep what result() and bestSoFar() still need, then hand the table back.
+            int end = found != NodeTable.NONE ? found : best;
+            if (end != NodeTable.NONE) {
+                finalPath = reconstructPath(end);
+                finalCost = nodes.g[end];
+            }
+            release(positions, nodes, touched, touchedCount);
+            nodes = null;
+            touched = null;
+        }
         return s;
+    }
+
+    /** The path to a node: read from the table, or kept from it once it went back. */
+    private List<PathStep> path(int id) {
+        return nodes != null ? reconstructPath(id) : finalPath;
+    }
+
+    private double cost(int id) {
+        return nodes != null ? nodes.g[id] : finalCost;
+    }
+
+    private long posOf(int id) {
+        return dense ? positions[id] : nodes.pos[id];
+    }
+
+    /** A cleared node table for a graph: its spare one if free, else a new one. */
+    private static NodeTable borrow(long[] positions) {
+        NodeTable t;
+        synchronized (SPARE_TABLES) {
+            t = SPARE_TABLES.remove(positions);
+        }
+        if (t == null) {
+            return new NodeTable(positions);
+        }
+        t.pos = positions;
+        return t;
+    }
+
+    /** Clears the nodes a finished search touched and keeps the table for the next search. */
+    private static void release(long[] positions, NodeTable t, int[] touched, int count) {
+        t.reset(touched, count);
+        t.pos = null;
+        synchronized (SPARE_TABLES) {
+            SPARE_TABLES.put(positions, t);
+        }
     }
 
     private NodeView view(int id) {
@@ -403,6 +466,12 @@ public final class AStarSearch {
             heap = Arrays.copyOf(heap, n);
             heapF = Arrays.copyOf(heapF, n);
             heapH = Arrays.copyOf(heapH, n);
+        }
+        if (dense) {
+            if (touchedCount == touched.length) {
+                touched = Arrays.copyOf(touched, touchedCount * 2);
+            }
+            touched[touchedCount++] = id;
         }
         int i = heapSize++;
         place(id, nodes.g[id] + nodes.h[id], nodes.h[id], i);

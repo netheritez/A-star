@@ -474,7 +474,7 @@ class EditorModelTest {
         System.setProperty("java.awt.headless", "true");
         String out = java.nio.file.Files.createTempDirectory("bench").toString();
         String bench = routeTool(FIXTURE.toString(), "--island", "2", "--bench", "3", "--out", out);
-        assertTrue(bench.contains("benchmark: 3 warm-up runs, then 3 timed runs"), bench);
+        assertTrue(bench.contains("benchmark: warming up, then 3 timed runs"), bench);
         assertTrue(bench.contains("nodes expanded per millisecond"), bench);
 
         String cmp = routeTool(FIXTURE.toString(), "--island", "2", "--compare", "--jump-cost", "5",

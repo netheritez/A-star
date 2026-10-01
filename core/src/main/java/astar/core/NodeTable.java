@@ -69,6 +69,23 @@ final class NodeTable {
         size = n;
     }
 
+    /**
+     * Puts the given nodes of a dense table back to their state before any search (g = infinity,
+     * no parent, not open or closed), so the table can serve another search on the same graph
+     * without allocating and filling arrays the size of the whole graph again.
+     */
+    void reset(int[] ids, int count) {
+        for (int i = 0; i < count; i++) {
+            int id = ids[i];
+            g[id] = Double.POSITIVE_INFINITY;
+            h[id] = 0;
+            parent[id] = NONE;
+            via[id] = 0;
+            closed[id] = false;
+            heapIndex[id] = NONE;
+        }
+    }
+
     int size() {
         return size;
     }

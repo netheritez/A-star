@@ -1341,6 +1341,11 @@ public final class RouteTool {
         System.out.printf("    %-22s %14.1f %14.1f%n", label, a, b);
     }
 
+    /** Benchmark warm-up: at least this many runs, then more until about 3 s have passed. */
+    private static final int WARMUP_MIN_RUNS = 10;
+    private static final int WARMUP_MAX_RUNS = 2000;
+    private static final long WARMUP_NANOS = 3_000_000_000L;
+
     /**
      * Times the same search repeatedly after warming up the JVM, and prints stats. With more than
      * one setting (--compare), the runs take turns, so JIT and garbage collection hit all alike.
@@ -1348,8 +1353,7 @@ public final class RouteTool {
      */
     private static void benchmark(ArrayBlockView blocks, BlockPoint start, BlockPoint goal,
             List<Settings> settings, int runs) {
-        int warmup = Math.max(3, Math.min(10, runs / 2));
-        System.out.printf("%n  benchmark: %d warm-up runs, then %d timed runs%s...%n", warmup, runs,
+        System.out.printf("%n  benchmark: warming up, then %d timed runs%s...%n", runs,
                 settings.size() > 1 ? " of each, taking turns" : "");
         double[] buildMedian = new double[settings.size()];
         for (int k = 0; k < settings.size(); k++) {
@@ -1365,11 +1369,18 @@ public final class RouteTool {
                         builds[1], builds.length);
             }
         }
-        for (int i = 0; i < warmup; i++) {
+        // The JIT only finishes compiling the search after a few dozen runs of a short route
+        // (until then a run can take 10x as long), so warm up for a while, not a set count.
+        long warmStart = System.nanoTime();
+        int warmup = 0;
+        while (warmup < WARMUP_MIN_RUNS
+                || (System.nanoTime() - warmStart < WARMUP_NANOS && warmup < WARMUP_MAX_RUNS)) {
             for (Settings s : settings) {
                 run(blocks, start, goal, s);
             }
+            warmup++;
         }
+        System.out.printf("  warmed up with %d runs in %.1f s%n", warmup, secs(warmStart));
         int n = settings.size();
         double[][] search = new double[n][runs];
         double[][] smooth = new double[n][runs];

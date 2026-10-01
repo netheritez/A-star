@@ -1,5 +1,4 @@
-# "A# jantq's own algo" (A*)
-A pun insult jantq for not knowing what A* is.
+# A*
 
 A Fabric mod for Minecraft 26.3 that walks your player to a block by itself.
 Type `/goto x y z` and it finds the path, plans the movement and steers your

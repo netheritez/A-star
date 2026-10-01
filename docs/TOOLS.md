@@ -166,10 +166,15 @@ four ways into `build/viz/route/`:
 .\gradlew.bat route --args="'C:\path\to\map.zip' --bench 20"
 .\gradlew.bat route --args="'C:\path\to\map.zip' --compare --jump-cost 4 --drop-per-block 1"
 ```
-- **`--bench n`:** runs the same search `n` times after warming up, and
-  prints the median, fastest and slowest search time in milliseconds,
-  the smoothing time, and nodes expanded per millisecond. The single
-  timing printed without it is one cold run.
+- **`--bench n`:** runs the same search `n` times after warming up (for
+  about 3 s, as the JIT needs a few dozen runs of a short route before the
+  search runs at full speed), and prints the median, fastest and slowest
+  search time in milliseconds, the smoothing time, and nodes expanded per
+  millisecond. The single timing printed without it is one cold run. On
+  the Hub route 0,70,1 -> -102,72,-32: about 48 ms search + 15 ms
+  smoothing cold, 0.8 ms + 0.4 ms warm. Gradle's own background process
+  shares the CPU, so `java -cp` on the built classes gives the steadiest
+  numbers.
 - **Weights:** `--walk-cost`, `--diagonal-cost`, `--jump-cost`,
   `--drop-cost`, `--drop-per-block`, `--swim-cost`, `--climb-cost`
   (defaults 1, 1.414, 2, 1, 0.5, 2 and 1.5), and for terrain

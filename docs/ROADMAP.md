@@ -410,6 +410,13 @@ One PR per milestone:
     background process competing for CPU, and GC pauses.
   - A cache-friendly brick-layout hash was tried; it was slower with
     linear probing, so it was reverted.
+- [x] **Node table reused between searches.** A move-graph search kept one
+  node per cell of the whole graph, allocated and filled for every
+  search (190,852 cells, about 5 MB, on the Hub), which took longer than
+  a short search itself and, with the heap busy, 20-45 ms. A finished
+  search now clears only the nodes it touched and hands the table to the
+  next search on that graph. Same paths (Hub and Mines images byte-equal,
+  teleport fingerprint unchanged). Hub route warm: 3.2 -> 0.8 ms median.
 - [x] **Faster move generation**: see parts 1 and 2 under the block model.
 - [x] **Hierarchical A\* (HPA\*) for long routes** (`route --hpa`). A
   cross-map route explored nearly the whole walkable area, so no heuristic
