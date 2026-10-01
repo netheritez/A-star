@@ -1,0 +1,5 @@
+# Walk diagonally forward-left, then sprint diagonally forward-right.
+at 2.5 0 -12.5 -90
+30 W A
+30 W D sprint
+20 -

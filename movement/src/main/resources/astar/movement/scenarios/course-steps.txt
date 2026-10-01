@@ -1,0 +1,4 @@
+# Walk up a slab onto a raised floor, along it, and drop off its far end.
+at 2.5 0 4.5 -90
+70 W
+20 -

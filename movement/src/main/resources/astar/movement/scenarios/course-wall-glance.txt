@@ -1,0 +1,4 @@
+# Sprint at a wall at a shallow angle and slide along it.
+at 2.5 0 11.5 -75
+30 W sprint
+20 -

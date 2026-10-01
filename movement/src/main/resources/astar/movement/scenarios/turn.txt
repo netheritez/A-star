@@ -1,0 +1,5 @@
+# Sprint while turning right 4.5 degrees a tick (a half circle in 40 ticks), then stop.
+at 2.5 0 -18.5 -90
+10 W sprint
+40 W sprint turn=4.5
+20 -

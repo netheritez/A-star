@@ -1,0 +1,1 @@
+// The pure A* core. It must not depend on any other project module.

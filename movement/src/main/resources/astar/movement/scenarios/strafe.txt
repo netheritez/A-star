@@ -1,0 +1,6 @@
+# Strafe left, then right, then walk backwards.
+at 2.5 0 -12.5 -90
+20 A
+20 D
+20 S
+20 -

@@ -1,0 +1,5 @@
+# Sprint onto soul sand, then walk, then stop.
+at 2.5 0 28.5 -90
+30 W sprint
+20 W
+20 -

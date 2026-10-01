@@ -1,0 +1,4 @@
+# Sprint onto packed ice, let go and slide.
+at 2.5 0 22.5 -90
+25 W sprint
+40 -

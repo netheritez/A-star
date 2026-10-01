@@ -1,0 +1,9 @@
+plugins {
+    // Downloads the Java 21 toolchain automatically when it isn't installed, so the build
+    // works whatever JDK runs Gradle itself (for example Java 25).
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'astar'
+
+include 'core', 'pathing', 'mcworld', 'viz', 'movement'

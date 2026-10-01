@@ -1,0 +1,5 @@
+// Helpers and subsystems: world lookup, validation, move generation.
+
+dependencies {
+    api project(':core')
+}

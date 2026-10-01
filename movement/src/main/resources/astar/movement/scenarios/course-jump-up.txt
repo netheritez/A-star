@@ -1,0 +1,5 @@
+# Sprint and hold jump across a row of one-block steps, jumping again on each landing.
+at 2.5 0 16.5 -90
+10 W sprint
+30 W sprint jump
+20 -

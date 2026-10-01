@@ -1,0 +1,6 @@
+# Sprint, jump once while sprinting, keep sprinting, then stop.
+at 2.5 0 -12.5 -90
+15 W sprint
+1 W sprint jump
+20 W sprint
+20 -

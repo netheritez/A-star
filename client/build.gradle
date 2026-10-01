@@ -1,0 +1,65 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.21'
+}
+
+version = '0.1.0'
+group = 'astar'
+
+base {
+    archivesName = 'astar-client'
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+// The movement, pathing and mcworld modules (and the core they use) are plain Java with no
+// other dependencies; their sources are compiled into the mod directly, so the trace format,
+// scenario scripts, simulator, pathfinder and block mapping are shared, not copied.
+sourceSets {
+    main {
+        java.srcDir '../core/src/main/java'
+        java.srcDir '../pathing/src/main/java'
+        java.srcDir '../mcworld/src/main/java'
+        java.srcDir '../movement/src/main/java'
+        resources.srcDir '../movement/src/main/resources'
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+processResources {
+    inputs.property 'version', project.version
+    // The Dwarven Mines map, so /goto can plan across the Mines past the render distance.
+    from('../maps/dwarven-mines.zip') {
+        into 'astar/maps'
+    }
+    // The license travels with the jar, so the copyright notice does too.
+    from('../LICENSE') {
+        rename { 'LICENSE_astar' }
+    }
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
+}
+
+// ./gradlew -p client runClient -Pastar.trace.autoplay=walk,sprint passes these settings on to
+// the game (see docs/TRACES.md); -Pastar.goto=x,y,z walks the player there once a world is
+// joined.
+loom {
+    runs {
+        client {
+            ['astar.trace.autoplay', 'astar.trace.autoquit', 'astar.trace.course', 'astar.trace.commands', 'astar.shapes.dump', 'astar.goto', 'astar.goto.commands', 'astar.goto.warp', 'astar.trace.casts'].each { key ->
+                if (project.hasProperty(key)) {
+                    property(key, project.property(key).toString())
+                }
+            }
+        }
+    }
+}

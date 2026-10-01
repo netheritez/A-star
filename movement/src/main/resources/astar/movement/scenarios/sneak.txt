@@ -1,0 +1,4 @@
+# Sneak forward, then stop.
+at 2.5 0 -12.5 -90
+40 W sneak
+20 -

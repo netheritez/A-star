@@ -1,0 +1,5 @@
+# Sneak towards a ledge; sneaking stops at the edge. Then turn and sneak along it.
+at 2.5 3 34.5 -90
+50 W sneak
+20 W sneak yaw=45
+10 -

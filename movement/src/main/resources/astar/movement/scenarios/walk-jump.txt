@@ -1,0 +1,6 @@
+# Walk, jump once while walking, keep walking, then stop.
+at 2.5 0 -12.5 -90
+15 W
+1 W jump
+20 W
+20 -

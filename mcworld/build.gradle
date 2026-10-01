@@ -1,0 +1,6 @@
+// Adapter: reads Minecraft (1.18+) world saves into the pathing module's block world.
+// Plain Java: it parses the file formats itself and never loads Minecraft classes.
+
+dependencies {
+    api project(':pathing')
+}

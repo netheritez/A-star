@@ -1,0 +1,4 @@
+# Sprint forward from standing, then let go and coast to a stop.
+at 2.5 0 -12.5 -90
+40 W sprint
+20 -

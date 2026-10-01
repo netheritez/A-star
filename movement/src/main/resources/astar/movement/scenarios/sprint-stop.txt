@@ -1,0 +1,7 @@
+# Sprint, then let go, then sprint and sneak to brake, then stop.
+at 2.5 0 -12.5 -90
+30 W sprint
+20 -
+30 W sprint
+10 W sneak
+20 -

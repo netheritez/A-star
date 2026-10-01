@@ -1,0 +1,9 @@
+// Player movement: input scripts, recorded traces, the physics simulator and the executor.
+// Plain Java that needs only pathing and core, so the client mod compiles these sources in
+// directly.
+
+dependencies {
+    // Pathing (and the core under it) finds the routes the executor recovers along; neither
+    // has any dependencies either.
+    api project(':pathing')
+}

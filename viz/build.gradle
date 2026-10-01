@@ -1,0 +1,56 @@
+// Adapter: console demo, Java2D renderer and Swing window.
+
+plugins {
+    id 'application'
+}
+
+dependencies {
+    implementation project(':mcworld')
+    implementation project(':movement')
+}
+
+application {
+    mainClass = 'astar.viz.Main'
+}
+
+tasks.register('viz', JavaExec) {
+    group = 'application'
+    description = 'Renders the demo searches to build/viz and opens a window if a display exists.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'astar.viz.VizMain'
+    args rootProject.layout.buildDirectory.dir('viz').get().asFile.path
+}
+
+tasks.register('edit', JavaExec) {
+    group = 'application'
+    description = 'Opens the interactive editor. Options: --args="--script --screenshot <file>".'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'astar.viz.EditorApp'
+    workingDir = rootProject.projectDir
+}
+
+tasks.register('islands', JavaExec) {
+    group = 'application'
+    description = 'Lists the islands in a world save and renders each longest route. --args="<world> [out]"'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'astar.viz.IslandTool'
+    workingDir = rootProject.projectDir
+}
+
+tasks.register('route', JavaExec) {
+    group = 'application'
+    description = 'Draws a route across an island. --args="<world or zip> [--island n] [--from x,y,z --to x,y,z]"'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'astar.viz.RouteTool'
+    workingDir = rootProject.projectDir
+    maxHeapSize = '4g'
+}
+
+// Tests remember maps in the build folder, never in your home folder (see SavedMap).
+tasks.named('test') {
+    systemProperty 'astar.settings', layout.buildDirectory.file('test-settings/settings.properties').get().asFile.path
+}
+
+// Big imported maps need more than the default heap.
+tasks.named('edit') { maxHeapSize = '4g' }
+tasks.named('islands') { maxHeapSize = '4g' }
